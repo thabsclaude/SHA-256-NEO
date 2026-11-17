@@ -1,0 +1,25 @@
+# Vivado generated project/build artifacts
+*.cache/
+*.runs/
+*.sim/
+*.hw/
+*.ip_user_files/
+*.gen/
+*.Xil/
+*.jou
+*.log
+*.str
+*.wdb
+*.wcfg
+*.bit
+*.bin
+*.ltx
+
+# Python generated files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Project planning and status documents (kept local)
+docs/
