@@ -50,7 +50,12 @@ def main() -> int:
             link.reset_input_buffer()
             link.write(packet)
             link.flush()
-            reply = link.read(37)
+            reply = link.read(1)
+            if reply == bytes([0xEE]):
+                print("FPGA reported a packet timeout (0xEE); the packet was discarded.", file=sys.stderr)
+                return 1
+            if len(reply) == 1:
+                reply += link.read(36)
     except serial.SerialException as exc:
         print(f"Serial error: {exc}", file=sys.stderr)
         return 2

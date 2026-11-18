@@ -14,12 +14,10 @@
 *.bit
 *.bin
 *.ltx
+reports/generated/
 
 # Python generated files
 __pycache__/
 *.py[cod]
 .venv/
 venv/
-
-# Project planning and status documents (kept local)
-docs/
