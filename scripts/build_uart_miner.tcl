@@ -9,6 +9,18 @@ file mkdir $report_dir
 open_project [file join $project_dir {FPGA Bitcoin Miner.xpr}]
 set_property top uart_miner [get_filesets sources_1]
 
+# Register any RTL or testbench files that are not yet in the project.
+foreach f [glob -nocomplain -directory [file join $project_dir rtl] *.v] {
+    if {[llength [get_files -quiet -all [file tail $f]]] == 0} {
+        add_files -norecurse -fileset sources_1 [list $f]
+    }
+}
+foreach f [glob -nocomplain -directory [file join $project_dir testbench] *.v] {
+    if {[llength [get_files -quiet -all [file tail $f]]] == 0} {
+        add_files -norecurse -fileset sim_1 [list $f]
+    }
+}
+
 # The blinker constraint file belongs to a different top-level design.
 # Match by name: the project path contains a space, which breaks path patterns.
 set_property IS_ENABLED false [get_files -all {*led_blinker.xdc}]

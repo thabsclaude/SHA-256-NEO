@@ -7,15 +7,19 @@ module mining_core(
     input wire [31:0] nonce_start, nonce_end,
     output reg busy, done, found,
     output reg [31:0] nonce_found,
-    output reg [255:0] digest_found
+    output reg [255:0] digest_found,
+    output wire hash_tick,            // one-cycle pulse per completed SHA256d
+    output wire [31:0] nonce_current  // nonce most recently launched
 );
 localparam [1:0] IDLE=0, LAUNCH=1, WAIT_HASH=2;
 reg [1:0] phase;
 reg [31:0] nonce;
 reg hash_start;
+assign nonce_current = nonce;
 wire hash_busy, hash_done;
 wire [255:0] hash_digest;
 sha256d_header hash_engine(.clk(clk),.reset(reset),.start(hash_start),.header(header),.nonce(nonce),.busy(hash_busy),.done(hash_done),.digest(hash_digest));
+assign hash_tick = hash_done;
 always @(posedge clk) begin
   if (reset) begin phase<=IDLE;busy<=0;done<=0;found<=0;nonce<=0;nonce_found<=0;digest_found<=0;hash_start<=0;end
   else begin

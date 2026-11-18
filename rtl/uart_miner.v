@@ -7,14 +7,20 @@
 //           discarded and a single 0xEE byte is returned; the next 'W' starts
 //           a fresh packet. The RESET button and UART_RX are synchronized.
 module uart_miner #(parameter integer CLKS_PER_BIT=868,
-                    parameter integer RX_TIMEOUT_CLKS=10000000)(
+                    parameter integer RX_TIMEOUT_CLKS=10000000,
+                    parameter integer HASH_WINDOW_CLKS=100000000,
+                    parameter integer CLKS_PER_US=100)(
  input wire CLK100MHZ, input wire RESET, input wire UART_RX,
- output wire UART_TX, output reg LED_BUSY, output reg LED_FOUND
+ input wire [1:0] SW,          // display mode: SW1 SW0 (SW0 is the rightmost switch)
+ output wire UART_TX, output reg LED_BUSY, output reg LED_FOUND,
+ output wire [7:0] AN, output wire [7:0] SEG  // seven-segment display, active low
 );
 // Two-flop synchronizers: RESET is an asynchronous push button and UART_RX is
 // asynchronous to the 100 MHz clock. rst asserts and releases on a clock edge.
 reg [1:0] rst_sync=2'b11, rx_sync=2'b11;
 always @(posedge CLK100MHZ) begin rst_sync<={rst_sync[0],RESET}; rx_sync<={rx_sync[0],UART_RX}; end
+reg [1:0] sw_a=2'b00, sw_b=2'b00;
+always @(posedge CLK100MHZ) begin sw_a<=SW; sw_b<=sw_a; end
 wire rst=rst_sync[1]; wire rx_in=rx_sync[1];
 wire [7:0] rx_byte; wire rx_valid;
 reg [7:0] tx_byte; reg tx_start;
@@ -23,8 +29,8 @@ uart_rx #(.CLKS_PER_BIT(CLKS_PER_BIT)) receiver(.clk(CLK100MHZ),.reset(rst),.ser
 uart_tx #(.CLKS_PER_BIT(CLKS_PER_BIT)) transmitter(.clk(CLK100MHZ),.reset(rst),.start(tx_start),.data_in(tx_byte),.serial_out(UART_TX),.busy(tx_busy),.ready(tx_ready));
 reg [639:0] work_header; reg [255:0] work_target; reg [31:0] nonce_start,nonce_end;
 reg [6:0] payload_index; reg packet_active, miner_start;
-wire miner_busy,miner_done,miner_found; wire [31:0] nonce_found; wire [255:0] digest_found;
-mining_core miner(.clk(CLK100MHZ),.reset(rst),.start(miner_start),.header(work_header),.target(work_target),.nonce_start(nonce_start),.nonce_end(nonce_end),.busy(miner_busy),.done(miner_done),.found(miner_found),.nonce_found(nonce_found),.digest_found(digest_found));
+wire miner_busy,miner_done,miner_found,hash_tick; wire [31:0] nonce_current; wire [31:0] nonce_found; wire [255:0] digest_found;
+mining_core miner(.clk(CLK100MHZ),.reset(rst),.start(miner_start),.header(work_header),.target(work_target),.nonce_start(nonce_start),.nonce_end(nonce_end),.busy(miner_busy),.done(miner_done),.found(miner_found),.nonce_found(nonce_found),.digest_found(digest_found),.hash_tick(hash_tick),.nonce_current(nonce_current));
 reg [31:0] reply_nonce; reg [255:0] reply_digest; reg reply_status;
 reg reply_active, tx_waiting, reply_error; reg [5:0] tx_index; reg [31:0] rx_idle;
 always @* begin
@@ -72,4 +78,21 @@ always @(posedge CLK100MHZ) begin
   end
  end
 end
+
+// Front-panel display. SW1 SW0: 00 hash rate (H/s), 01 current nonce (hex),
+// 10 search time (us), 11 hashes done in the search.
+wire [26:0] rate_hps, hash_count, elapsed_us;
+perf_monitor #(.SEC_CLKS(HASH_WINDOW_CLKS),.US_CLKS(CLKS_PER_US)) perf(.clk(CLK100MHZ),.rst(rst),.search_start(miner_start),.search_busy(miner_busy),.hash_tick(hash_tick),.rate_hps(rate_hps),.hash_count(hash_count),.elapsed_us(elapsed_us));
+reg [31:0] show_value; reg show_hex;
+always @(posedge CLK100MHZ) begin
+  case(sw_b)
+    2'b00: begin show_value<={5'b0,rate_hps}; show_hex<=1'b0; end
+    2'b01: begin show_value<=nonce_current;   show_hex<=1'b1; end
+    2'b10: begin show_value<={5'b0,elapsed_us}; show_hex<=1'b0; end
+    default: begin show_value<={5'b0,hash_count}; show_hex<=1'b0; end
+  endcase
+end
+wire [31:0] bcd;
+bin2bcd to_decimal(.clk(CLK100MHZ),.rst(rst),.bin(show_value[26:0]),.bcd(bcd));
+seven_seg_driver display(.clk(CLK100MHZ),.rst(rst),.digits(show_hex ? show_value : bcd),.blank_leading(!show_hex),.AN(AN),.SEG(SEG));
 endmodule

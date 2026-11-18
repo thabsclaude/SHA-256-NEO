@@ -7,7 +7,8 @@ reg [31:0] nonce_start,nonce_end;
 wire busy,done,found;
 wire [31:0] nonce_found;
 wire [255:0] digest_found;
-mining_core dut(.clk(clk),.reset(reset),.start(start),.header(header),.target(target),.nonce_start(nonce_start),.nonce_end(nonce_end),.busy(busy),.done(done),.found(found),.nonce_found(nonce_found),.digest_found(digest_found));
+wire hash_tick;wire [31:0] nonce_current;
+mining_core dut(.clk(clk),.reset(reset),.start(start),.header(header),.target(target),.nonce_start(nonce_start),.nonce_end(nonce_end),.busy(busy),.done(done),.found(found),.nonce_found(nonce_found),.digest_found(digest_found),.hash_tick(hash_tick),.nonce_current(nonce_current));
 always #5 clk=~clk;
 initial begin
   nonce_start=32'h0000002a;nonce_end=32'h0000002b;target=256'hffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;

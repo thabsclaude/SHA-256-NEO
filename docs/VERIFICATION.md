@@ -24,6 +24,14 @@ After the shift-register restructuring and the UART hardening, the following pas
 
 The direct SHA-256 vectors use only the standard IV. Non-IV chaining states are exercised only through the SHA256d header test; add random-state vectors against `python/sha256_compress_ref.py` before publication.
 
+## Display regression
+
+After adding the front-panel display (2026-11-18), all XSim testbenches passed. New: `display_tb` checks `bin2bcd` against known values (0, 7, 1234, 493210, 12345678, 99999999), scans all eight digits of `seven_seg_driver` against an independent segment table in hex and decimal-blanking modes, and checks `perf_monitor` rate, hash count, elapsed time, rate hold, and clear-on-start. `uart_miner_tb` checks the display values after a one-nonce search. Routed WNS is +1.129 ns. The display and switches have not yet been verified on the board.
+
+## Board-level evidence
+
+On 2026-11-18, `uart_miner_timing_clean.bit` (routed WNS +1.441 ns) was programmed onto a Nexys A7-100T. Reported by the user from `python/uart_miner_host.py` on COM7 (115200 baud), with the header bytes `00..4f`, an all-`ff` target, and nonce range `0x2a` to `0x2a`: the board returned `FOUND nonce=0x0000002a` and digest `86bef4c1c6dd1f3a6c456465f26af381e57fc3a8670c066979a37584306802e1`. This matches the XSim result and an independent Python `hashlib` double SHA-256 of the same header. Terminal output was pasted by the user and is not retained as a log file. Hash rate has not been measured.
+
 ## Planned checks
 
 - **Reference model:** independent Python SHA-256d/header reference and explicit serialization helpers.

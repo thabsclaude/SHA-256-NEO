@@ -25,6 +25,21 @@ The known-answer SHA-256, SHA256d header, mining-controller, UART loopback, UART
 
 See the [baseline report](reports/BASELINE-2026-11-18.md) and [timing-closure report](reports/TIMING-CLOSURE-2026-11-18.md).
 
+## Using the board
+
+Program `reports/generated/uart_miner_timing_clean.bit`, then send work from the PC. The seven-segment display and two slide switches show live status:
+
+| SW1 | SW0 | Display shows |
+|:---:|:---:|---|
+| down | down | Hash rate in hashes per second (last full 1 s window of an active search) |
+| down | up | Current nonce, in hexadecimal |
+| up | down | Search time in microseconds |
+| up | up | Hashes completed in the current or last search |
+
+SW0 is the rightmost slide switch and SW1 is the one beside it. LD0 lights while hashing and LD1 lights when a nonce meets the target. Decimal modes blank leading zeros.
+
+`python/uart_miner_host.py` sends one packet. `python/uart_miner_dashboard.py` splits a large range into chunks and prints a live progress bar and hash rate. Use a large range with an impossible target to see a steady rate, for example nonces `0` to `0xffffff`.
+
 ## Repository layout
 
 | Path | Purpose |

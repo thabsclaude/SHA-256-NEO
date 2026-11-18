@@ -8,6 +8,8 @@
 - The first integrated implementation (baseline) failed 100 MHz setup timing by 84.022 ns; see `reports/BASELINE-2026-11-18.md`. The current revision meets timing with +1.441 ns slack; see `reports/TIMING-CLOSURE-2026-11-18.md`.
 - `sha256_compress` runs 65 cycles per block: 64 rounds plus a finalization cycle. It uses a 16-word shift-register schedule and a pre-registered `h+K+W` term.
 
+- Front panel: `perf_monitor` counts hashes per 1 s window, hashes per search, and search time in microseconds. `bin2bcd` and `seven_seg_driver` show one of four values chosen by SW1 and SW0 on the eight-digit display (see the README table).
+
 ## Design decisions (proposal)
 
 The system is divided into a Python host and FPGA datapath/control:
